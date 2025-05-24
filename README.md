@@ -1,50 +1,73 @@
-# Welcome to your Expo app 👋
+# React Native DND
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A versatile drag and drop library for React Native.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Installation
 
 ```bash
-npm run reset-project
+npm install @nverk/react-native-dnd
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Peer Dependencies
 
-## Learn more
+This library requires the following peer dependencies:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npm install react-native-gesture-handler react-native-reanimated
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Development
 
-## Join the community
+### Building the Library
 
-Join our community of developers creating universal apps.
+```bash
+# Build for production
+npm run build
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Build with TypeScript only (for type checking)
+npm run build:tsc
+
+# Watch mode for development
+npm run dev
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+### Project Structure
+
+- `src/` - Source code
+  - `components/` - React components (Draggable, Droppable)
+  - `context/` - React context for DND state management
+  - `hooks/` - Custom hooks for drag and drop functionality
+  - `types/` - TypeScript type definitions
+- `dist/` - Built output (generated)
+
+### Build Configuration
+
+The project uses:
+
+- **tsup** for fast bundling with ESBuild
+- **TypeScript** for type checking and declaration generation
+- **ESLint** for code linting
+- Outputs both CommonJS and ESM formats
+- Generates TypeScript declaration files
+
+## Usage
+
+```javascript
+import { DndProvider, Draggable, Droppable } from "react-native-dnd";
+
+// Your component code here
+```
+
+## Contributing
+
+See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
+
+## License
+
+MIT
