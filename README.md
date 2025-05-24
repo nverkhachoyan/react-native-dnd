@@ -8,7 +8,7 @@ A versatile drag and drop library for React Native.
 npm install @nverk/react-native-dnd
 ```
 
-### Peer Dependencies
+### Peer Deps
 
 This library requires the following peer dependencies:
 
@@ -58,15 +58,44 @@ The project uses:
 
 ## Usage
 
-```javascript
-import { DndProvider, Draggable, Droppable } from "react-native-dnd";
+> Wrap DndProvider at the top level to preserve DND state after screen change.
 
-// Your component code here
+```javascript
+import {
+  DndList,
+  DndProvider,
+  Draggable,
+  Droppable,
+} from "@nverk/react-native-dnd";
+import { SafeAreaView, Text } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+export default function HomeScreen() {
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <GestureHandlerRootView>
+        <Text>Drag and Drop Demo</Text>
+        <DndProvider>
+          <DndList>
+            <Droppable key={"drop1"} id={"drop1"}>
+              <Text>Drop Here</Text>
+            </Droppable>
+            <Draggable key={"drag1"} id="drag1">
+              <Text>Drag Me</Text>
+            </Draggable>
+          </DndList>
+        </DndProvider>
+      </GestureHandlerRootView>
+    </SafeAreaView>
+  );
+}
 ```
+
+There is a better example at [example](example).
 
 ## Contributing
 
-See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
+You're free to contribute to the project if you're willing to make sense of the mess I made ;)
 
 ## License
 
