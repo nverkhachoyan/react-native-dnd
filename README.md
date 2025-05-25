@@ -7,6 +7,11 @@ Lightweight Drag and Drop for React Native, powered by Reanimated & Gesture Hand
 <!-- ![License](...) -->
 <!-- ![Build Status](...) -->
 
+[![npm version](https://img.shields.io/npm/v/@nverk/react-native-dnd)](https://www.npmjs.com/package/@nverk/react-native-dnd)
+[![npm version](https://img.shields.io/npm/dm/@nverk/react-native-dnd)](https://www.npmjs.com/package/@nverk/react-native-dnd)
+[![License](https://img.shields.io/npm/l/@nverk/react-native-dnd)](https://www.npmjs.com/package/@nverk/react-native-dnd)
+
+
 ## Overview
 
 `@nverk/react-native-dnd` is a lightweight and performant drag-and-drop solution for React Native applications. It leverages the power of `react-native-gesture-handler` for robust gesture recognition and `react-native-reanimated` (v3 compatible) for smooth, native-feeling animations.
