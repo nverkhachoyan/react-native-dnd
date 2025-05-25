@@ -62,7 +62,7 @@ import {
   Draggable,
   Droppable,
 } from "@nverk/react-native-dnd";
-import { SafeAreaView, Text } from "react-native";
+import { SafeAreaView, View, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function HomeScreen() {
@@ -71,14 +71,14 @@ export default function HomeScreen() {
       <GestureHandlerRootView>
         <Text>Drag and Drop Demo</Text>
         <DndProvider>
-          <DndList>
+          <View style={{flex:1}}>
             <Droppable key={"drop1"} id={"drop1"}>
               <Text>Drop Here</Text>
             </Droppable>
             <Draggable key={"drag1"} id="drag1">
               <Text>Drag Me</Text>
             </Draggable>
-          </DndList>
+          </View>
         </DndProvider>
       </GestureHandlerRootView>
     </SafeAreaView>
