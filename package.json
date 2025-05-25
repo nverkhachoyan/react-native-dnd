@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/nverkhachoyan/react-native-dnd/issues"
   },
-  "homepage": "https://github.com/nverkhachoyan/react-native-dnd#readme",
+  "homepage": "https://www.nverk.me/react-native-dnd",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "build:tsc": "tsc --project tsconfig.lib.json",
+    "build:tsc": "tsc --project tsconfig.json",
     "dev": "tsup --watch",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "prepublishOnly": "npm run build"

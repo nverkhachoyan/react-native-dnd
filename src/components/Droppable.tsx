@@ -8,15 +8,16 @@ import Animated, {
 } from "react-native-reanimated";
 import { useDndContext } from "../context/DndContext";
 import useDroppable from "../hooks/useDroppable";
-import { DndID, DroppableCallbacks } from "../types";
+import { DndID, DroppableCallbacks, SnapBehaviorType } from "../types";
 
 interface DroppableProps extends Omit<ViewProps, "id"> {
   id: DndID;
-  onEnter?: (draggedId: DndID) => void;
-  onLeave?: (draggedId: DndID) => void;
-  onDrop?: (draggedId: DndID) => void;
+  onEnter?: (droppableId: DndID, draggedId: DndID | null) => void;
+  onLeave?: (droppableId: DndID, draggedId: DndID | null) => void;
+  onDrop?: (droppableId: DndID, draggedId: DndID | null) => void;
   capacity?: number;
   swappable?: boolean;
+  snapBehavior?: SnapBehaviorType;
   userAnimatedStyle?: (isHovered: boolean) => Record<string, unknown>;
   onHoverStateChange?: (isHovered: boolean) => void;
 }
@@ -30,11 +31,12 @@ export const Droppable: React.FC<DroppableProps> = ({
   style,
   capacity,
   swappable,
+  snapBehavior = "center",
   userAnimatedStyle,
   onHoverStateChange,
 }) => {
   const elementRef = useAnimatedRef<Animated.View>();
-  const dndContext = useDndContext();
+  const { currentDroppableId } = useDndContext();
 
   const memoizedCallbacks = useMemo<DroppableCallbacks>(
     () => ({
@@ -50,23 +52,24 @@ export const Droppable: React.FC<DroppableProps> = ({
     memoizedCallbacks,
     elementRef,
     capacity,
-    swappable
+    swappable,
+    snapBehavior
   );
 
   useAnimatedReaction(
-    () => dndContext.currentDroppableId.value === id,
+    () => currentDroppableId.value === id,
     (isHoveredNow, wasHoveredPreviously) => {
       if (onHoverStateChange && isHoveredNow !== wasHoveredPreviously) {
         runOnJS(onHoverStateChange)(isHoveredNow);
       }
     },
-    [id, dndContext.currentDroppableId, onHoverStateChange]
+    [id, currentDroppableId, onHoverStateChange]
   );
 
   const combinedAnimatedStyle = useAnimatedStyle(() => {
-    const isHovered = dndContext.currentDroppableId.value === id;
+    const isHovered = currentDroppableId.value === id;
     return userAnimatedStyle ? userAnimatedStyle(isHovered) : {};
-  }, [userAnimatedStyle]);
+  }, [userAnimatedStyle, currentDroppableId, id]);
 
   return (
     <Animated.View

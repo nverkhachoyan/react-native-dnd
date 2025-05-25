@@ -16,7 +16,7 @@ import {
 import { DndID, DraggableType, DroppableType } from "../types";
 
 interface DndContextType {
-  currentDraggedId: SharedValue<DndID | null>;
+  currentDraggableId: SharedValue<DndID | null>;
   currentDroppableId: SharedValue<DndID | null>;
   draggables: SharedValue<Record<DndID, DraggableType>>;
   droppables: SharedValue<Record<DndID, DroppableType>>;
@@ -36,7 +36,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
   const droppables = useSharedValue<Record<DndID, DroppableType>>({});
   const droppedItems = useSharedValue<Record<DndID, DndID>>({});
 
-  const currentDraggedId = useSharedValue<DndID | null>(null);
+  const currentDraggableId = useSharedValue<DndID | null>(null);
   const currentDroppableId = useSharedValue<DndID | null>(null);
   const previousDroppableId = useSharedValue<DndID | null>(null);
 
@@ -77,54 +77,118 @@ export function DndProvider({ children }: { children: ReactNode }) {
     droppableId: DndID
   ) => {
     "worklet";
-    const draggable = draggables.value[draggableId];
-    const droppable = droppables.value[droppableId];
-    if (!draggable || !droppable || !draggable.layout || !droppable.layout)
+    const draggableItem = draggables.value[draggableId];
+    const droppableInfo = droppables.value[droppableId];
+
+    if (
+      !draggableItem ||
+      !droppableInfo ||
+      !draggableItem.layout ||
+      !droppableInfo.layout
+    )
       return;
-    if (draggable.layout.width === 0 || droppable.layout.width === 0) return;
+    if (draggableItem.layout.width === 0 && draggableItem.layout.height === 0)
+      return;
 
-    const newOffsetX =
-      droppable.layout.x -
-      draggable.layout.x +
-      (droppable.layout.width - draggable.layout.width) / 2;
-    const newOffsetY =
-      droppable.layout.y -
-      draggable.layout.y +
-      (droppable.layout.height - draggable.layout.height) / 2;
+    const snap = droppableInfo.snapBehavior ?? "center";
+    let newOffsetX = draggableItem.offset.x;
+    let newOffsetY = draggableItem.offset.y;
 
-    draggables.value = {
-      ...draggables.value,
-      [draggableId]: {
-        ...draggable,
-        offset: { x: newOffsetX, y: newOffsetY },
-        start: { x: newOffsetX, y: newOffsetY },
-      },
-    };
+    if (snap === "none") {
+      draggableItem.start.x = draggableItem.offset.x;
+      draggableItem.start.y = draggableItem.offset.y;
+      draggables.value = { ...draggables.value };
+      return;
+    }
+
+    const dLayout = draggableItem.layout;
+    const pLayout = droppableInfo.layout;
+
+    if (
+      typeof snap === "object" &&
+      snap !== null &&
+      "x" in snap &&
+      "y" in snap
+    ) {
+      newOffsetX = pLayout.x - dLayout.x + snap.x;
+      newOffsetY = pLayout.y - dLayout.y + snap.y;
+    } else {
+      switch (snap) {
+        case "center":
+          newOffsetX =
+            pLayout.x - dLayout.x + (pLayout.width - dLayout.width) / 2;
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height) / 2;
+          break;
+        case "topLeft":
+          newOffsetX = pLayout.x - dLayout.x;
+          newOffsetY = pLayout.y - dLayout.y;
+          break;
+        case "topCenter":
+          newOffsetX =
+            pLayout.x - dLayout.x + (pLayout.width - dLayout.width) / 2;
+          newOffsetY = pLayout.y - dLayout.y;
+          break;
+        case "topRight":
+          newOffsetX = pLayout.x - dLayout.x + (pLayout.width - dLayout.width);
+          newOffsetY = pLayout.y - dLayout.y;
+          break;
+        case "middleLeft":
+          newOffsetX = pLayout.x - dLayout.x;
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height) / 2;
+          break;
+        case "middleRight":
+          newOffsetX = pLayout.x - dLayout.x + (pLayout.width - dLayout.width);
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height) / 2;
+          break;
+        case "bottomLeft":
+          newOffsetX = pLayout.x - dLayout.x;
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height);
+          break;
+        case "bottomCenter":
+          newOffsetX =
+            pLayout.x - dLayout.x + (pLayout.width - dLayout.width) / 2;
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height);
+          break;
+        case "bottomRight":
+          newOffsetX = pLayout.x - dLayout.x + (pLayout.width - dLayout.width);
+          newOffsetY =
+            pLayout.y - dLayout.y + (pLayout.height - dLayout.height);
+          break;
+      }
+    }
+
+    draggableItem.offset.x = newOffsetX;
+    draggableItem.offset.y = newOffsetY;
+    draggableItem.start.x = newOffsetX;
+    draggableItem.start.y = newOffsetY;
+    draggables.value = { ...draggables.value };
   };
 
   const resetDraggableToHomePosition = useCallback(
     (id: DndID) => {
       "worklet";
-      const draggable = draggables.value[id];
-      if (!draggable) {
+      const draggableItem = draggables.value[id];
+      if (!draggableItem) {
         return;
       }
 
-      draggables.value = {
-        ...draggables.value,
-        [id]: {
-          ...draggable,
-          offset: { x: 0, y: 0 },
-          start: { x: 0, y: 0 },
-        },
-      };
+      draggableItem.offset.x = 0;
+      draggableItem.offset.y = 0;
+      draggableItem.start.x = 0;
+      draggableItem.start.y = 0;
+      draggables.value = { ...draggables.value };
     },
     [draggables]
   );
 
   const findCurrentDroppable = () => {
     "worklet";
-    const id = currentDraggedId.value;
+    const id = currentDraggableId.value;
     if (!id) return null;
 
     const draggable = draggables.value[id];
@@ -176,7 +240,6 @@ export function DndProvider({ children }: { children: ReactNode }) {
           bestCenterMatch = { id: key, overlap: overlapPercentage };
         }
       } else if (overlapArea > 0) {
-        // Any positive overlap area considered for non-center matches
         if (!bestOverlapMatch || overlapPercentage > bestOverlapMatch.overlap) {
           bestOverlapMatch = { id: key, overlap: overlapPercentage };
         }
@@ -184,7 +247,6 @@ export function DndProvider({ children }: { children: ReactNode }) {
     }
 
     if (bestCenterMatch) return bestCenterMatch.id;
-    // Fallback to best overall overlap if no center match
     if (bestOverlapMatch) return bestOverlapMatch.id;
 
     return null;
@@ -223,35 +285,82 @@ export function DndProvider({ children }: { children: ReactNode }) {
 
     setDraggableToDroppablePosition(draggedId, droppableId);
 
-    const appOnDropCallback = droppableInfo.callbacks?.onDrop;
-    if (appOnDropCallback) {
-      runOnJS(appOnDropCallback)(draggedId);
+    const onDropDroppableCallback = droppableInfo.callbacks?.onDrop;
+    const onDropDraggableCallback =
+      draggables.value[draggedId]?.callbacks?.onDrop;
+    if (onDropDroppableCallback) {
+      runOnJS(onDropDroppableCallback)(droppableId, draggedId);
+    }
+    if (onDropDraggableCallback) {
+      runOnJS(onDropDraggableCallback)(draggedId, droppableId);
     }
   };
 
-  const handleEnterDroppable = (draggedId: DndID, droppableId: DndID) => {
+  const handleEnterDroppable = (
+    droppableId: DndID,
+    draggedId: DndID | null
+  ) => {
     "worklet";
     const droppable = droppables.value[droppableId];
-    if (droppable && droppable.callbacks?.onEnter) {
-      runOnJS(droppable.callbacks.onEnter)(draggedId);
+    if (droppable && droppable.callbacks?.onEnter && draggedId) {
+      runOnJS(droppable.callbacks.onEnter)(droppableId, draggedId);
     }
   };
 
-  const handleLeaveDroppable = (draggedId: DndID, droppableId: DndID) => {
+  const handleLeaveDroppable = (
+    droppableId: DndID,
+    draggedId: DndID | null
+  ) => {
     "worklet";
     const droppable = droppables.value[droppableId];
-    if (droppable && droppable.callbacks?.onLeave) {
-      runOnJS(droppable.callbacks.onLeave)(draggedId);
+    if (droppable && droppable.callbacks?.onLeave && draggedId) {
+      runOnJS(droppable.callbacks.onLeave)(droppableId, draggedId);
+    }
+  };
+
+  const handleEnterDraggable = (
+    draggedId: DndID,
+    droppableId: DndID | null
+  ) => {
+    "worklet";
+    const draggable = draggables.value[draggedId];
+    if (draggable && draggable.callbacks?.onEnter && droppableId) {
+      runOnJS(draggable.callbacks.onEnter)(draggedId, droppableId);
+    }
+  };
+
+  const handleLeaveDraggable = (
+    draggedId: DndID,
+    droppableId: DndID | null
+  ) => {
+    "worklet";
+    const draggable = draggables.value[draggedId];
+    if (draggable && draggable.callbacks?.onLeave && droppableId) {
+      runOnJS(draggable.callbacks.onLeave)(draggedId, droppableId);
     }
   };
 
   const cleanupAndResetDraggable = (draggedId: DndID) => {
     "worklet";
+    const draggableItem = draggables.value[draggedId];
+    if (!draggableItem) return;
+
+    const behavior = draggableItem.dropBehavior ?? "snapToHome";
+
     if (droppedItems.value[draggedId]) {
-      const { [draggedId]: _removed, ...rest } = droppedItems.value;
-      droppedItems.value = rest;
+      delete droppedItems.value[draggedId];
+      droppedItems.value = { ...droppedItems.value };
     }
-    resetDraggableToHomePosition(draggedId);
+
+    if (behavior === "snapToHome") {
+      resetDraggableToHomePosition(draggedId);
+    } else if (behavior === "freeRoam") {
+      if (draggableItem.offset) {
+        draggableItem.start.x = draggableItem.offset.x;
+        draggableItem.start.y = draggableItem.offset.y;
+        draggables.value = { ...draggables.value };
+      }
+    }
   };
 
   const processDropOnValidTarget = (
@@ -266,8 +375,6 @@ export function DndProvider({ children }: { children: ReactNode }) {
     let itemsCurrentlyInTargetCount = 0;
     let isDraggedItemAlreadyPhysicallyInTarget = false;
 
-    // Calculate how many items are already in the target droppable
-    // and if the currently dragged item was already one of them
     for (const [itemId, occupantsDroppableId] of Object.entries(
       droppedItems.value
     )) {
@@ -279,9 +386,9 @@ export function DndProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Determine if the item can be placed directly
-    // If it was already in the target, it can stay if capacity allows (itemsCurrentlyInTargetCount <= capacity)
-    // If it's new to the target, it can be placed if there's space (itemsCurrentlyInTargetCount < capacity)
+    // Determine if the item can be placed directly.
+    // - If the item was already in th  e target, it can stay if capacity allows (itemsCurrentlyInTargetCount <= capacity).
+    // - If it's new to the target, it can be placed if there's space (itemsCurrentlyInTargetCount < capacity).
     const canPlaceDirectly = isDraggedItemAlreadyPhysicallyInTarget
       ? itemsCurrentlyInTargetCount <= capacity
       : itemsCurrentlyInTargetCount < capacity;
@@ -289,12 +396,9 @@ export function DndProvider({ children }: { children: ReactNode }) {
     if (canPlaceDirectly) {
       handleDrop(draggedId, targetDroppableId);
     } else {
-      // Cannot place directly (e.g., over capacity for a new item)
       if (isSwappable) {
-        // If swappable, proceed with the drop (handleDrop will manage swapping)
         handleDrop(draggedId, targetDroppableId);
       } else {
-        // Not swappable and cannot place directly, so reset the item
         cleanupAndResetDraggable(draggedId);
       }
     }
@@ -307,7 +411,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
       if (!id) {
         return;
       }
-      currentDraggedId.value = id;
+      currentDraggableId.value = id;
       const draggable = draggables.value[id];
       if (draggable && draggable.offset) {
         draggable.start = { x: draggable.offset.x, y: draggable.offset.y };
@@ -315,7 +419,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
     })
     .onUpdate((e) => {
       "worklet";
-      const id = currentDraggedId.value;
+      const id = currentDraggableId.value;
       if (id === null) return;
       const draggable = draggables.value[id];
       if (!draggable || !draggable.start || !draggable.offset) {
@@ -323,26 +427,30 @@ export function DndProvider({ children }: { children: ReactNode }) {
       }
       const newOffsetX = draggable.start.x + e.translationX;
       const newOffsetY = draggable.start.y + e.translationY;
-      draggable.offset = { x: newOffsetX, y: newOffsetY };
+
+      draggable.offset.x = newOffsetX;
+      draggable.offset.y = newOffsetY;
+      // New object reference to notify Reanimated that draggables has changed
       draggables.value = { ...draggables.value };
 
       const droppableId = findCurrentDroppable();
       if (droppableId !== previousDroppableId.value) {
         if (previousDroppableId.value) {
-          handleLeaveDroppable(id, previousDroppableId.value);
+          handleLeaveDroppable(previousDroppableId.value, id);
+          handleLeaveDraggable(id, previousDroppableId.value);
         }
         if (droppableId) {
-          handleEnterDroppable(id, droppableId);
+          handleEnterDroppable(droppableId, id);
+          handleEnterDraggable(id, droppableId);
         }
       }
       currentDroppableId.value = droppableId;
       previousDroppableId.value = droppableId;
     })
-    .onEnd((_e) => {
+    .onEnd(() => {
       "worklet";
-      const draggedId = currentDraggedId.value;
+      const draggedId = currentDraggableId.value;
       if (draggedId === null) {
-        // Ensure related state is also cleared if drag ended prematurely or was invalid
         currentDroppableId.value = null;
         previousDroppableId.value = null;
         return;
@@ -355,6 +463,8 @@ export function DndProvider({ children }: { children: ReactNode }) {
         if (droppableInfo) {
           processDropOnValidTarget(draggedId, targetDroppableId, droppableInfo);
         } else {
+          // This case should ideally not happen if targetDroppableId is valid
+          // but as a fallback, treating as if dropped outside
           cleanupAndResetDraggable(draggedId);
         }
       } else {
@@ -364,12 +474,13 @@ export function DndProvider({ children }: { children: ReactNode }) {
     })
     .onFinalize(() => {
       "worklet";
-      const id = currentDraggedId.value;
+      const id = currentDraggableId.value;
       if (id === null) return;
       if (currentDroppableId.value) {
-        handleLeaveDroppable(id, currentDroppableId.value);
+        handleLeaveDroppable(currentDroppableId.value, id);
+        handleLeaveDraggable(id, currentDroppableId.value);
       }
-      currentDraggedId.value = null;
+      currentDraggableId.value = null;
       currentDroppableId.value = null;
       previousDroppableId.value = null;
     });
@@ -385,7 +496,7 @@ export function DndProvider({ children }: { children: ReactNode }) {
   return (
     <DndContext.Provider
       value={{
-        currentDraggedId,
+        currentDraggableId,
         currentDroppableId,
         draggables,
         droppables,

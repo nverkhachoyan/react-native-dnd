@@ -1,60 +1,50 @@
-# React Native DND
+# @nverk/react-native-dnd
 
-A versatile drag and drop library for React Native.
+Lightweight Drag and Drop for React Native, powered by Reanimated & Gesture Handler
+
+<!-- Placeholder for badges -->
+<!-- ![NPM Version](...) -->
+<!-- ![License](...) -->
+<!-- ![Build Status](...) -->
+
+## Overview
+
+`@nverk/react-native-dnd` is a lightweight and performant drag-and-drop solution for React Native applications. It leverages the power of `react-native-gesture-handler` for robust gesture recognition and `react-native-reanimated` (v3 compatible) for smooth, native-feeling animations.
+
+**Key Features:**
+
+- Built with `react-native-gesture-handler` and `react-native-reanimated`.
+- Smooth animations and precise gesture handling.
+- Highly customizable drag and drop behavior.
+- Lightweight and focused API.
+- Type-safe with TypeScript.
+- Supports snapping, swapping, capacity limits, and various drop behaviors.
+
+## Documentation
+
+You can find extensive documentation for the module [here](https://www.nverk.me/react-native-dnd).
 
 ## Installation
 
 ```bash
 npm install @nverk/react-native-dnd
+# or
+yarn add @nverk/react-native-dnd
 ```
 
-### Peer Deps
+**Peer Dependencies:**
 
-This library requires the following peer dependencies:
+Ensure you have `react-native-gesture-handler` and `react-native-reanimated` installed and configured in your project.
 
-```bash
-npm install react-native-gesture-handler react-native-reanimated
-```
+- `react-native-gesture-handler >= 2.x.x`
+- `react-native-reanimated >= 3.x.x`
 
-## Development
+Refer to their official installation guides for native setup:
 
-### Building the Library
+- [React Native Gesture Handler Documentation](https://docs.swmansion.com/react-native-gesture-handler/docs/installation)
+- [React Native Reanimated Documentation](https://docs.swmansion.com/react-native-reanimated/docs/installation) (ensure the Babel plugin is correctly set up)
 
-```bash
-# Build for production
-npm run build
-
-# Build with TypeScript only (for type checking)
-npm run build:tsc
-
-# Watch mode for development
-npm run dev
-```
-
-### Linting
-
-```bash
-npm run lint
-```
-
-### Project Structure
-
-- `src/` - Source code
-  - `components/` - React components (Draggable, Droppable)
-  - `context/` - React context for DND state management
-  - `hooks/` - Custom hooks for drag and drop functionality
-  - `types/` - TypeScript type definitions
-- `dist/` - Built output (generated)
-
-### Build Configuration
-
-The project uses:
-
-- **tsup** for fast bundling with ESBuild
-- **TypeScript** for type checking and declaration generation
-- **ESLint** for code linting
-- Outputs both CommonJS and ESM formats
-- Generates TypeScript declaration files
+**NOTE:** It's important to wrap your application with `GestureHandlerRootView` at the root, as shown in the example, for `react-native-gesture-handler` to work correctly.
 
 ## Usage
 

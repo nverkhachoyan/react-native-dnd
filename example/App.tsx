@@ -1,11 +1,6 @@
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 
-import {
-  DndList,
-  DndProvider,
-  Draggable,
-  Droppable,
-} from "@nverk/react-native-dnd";
+import { DndProvider, Draggable, Droppable } from "@nverk/react-native-dnd";
 import { withSpring, WithSpringConfig } from "react-native-reanimated";
 
 const SENTENCE_PARTS = ["The", "", "brown", "fox", "", "over"];
@@ -41,7 +36,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <DndProvider>
-        <DndList style={styles.sentenceContainer}>
+        <View style={styles.sentenceContainer}>
           {SENTENCE_PARTS.map((part, index) => {
             const isBlank = !part;
 
@@ -64,9 +59,9 @@ export default function App() {
               </View>
             );
           })}
-        </DndList>
+        </View>
 
-        <DndList style={styles.optionsContainer}>
+        <View style={styles.optionsContainer}>
           {WORD_OPTIONS.map((option, idx) => (
             <Draggable
               key={option}
@@ -78,7 +73,7 @@ export default function App() {
               <Text>{option}</Text>
             </Draggable>
           ))}
-        </DndList>
+        </View>
       </DndProvider>
     </SafeAreaView>
   );

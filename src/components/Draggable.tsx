@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ViewProps } from "react-native";
 import type { WithSpringConfig } from "react-native-reanimated";
 import Animated, {
@@ -10,10 +10,14 @@ import Animated, {
 } from "react-native-reanimated";
 import { useDndContext } from "../context/DndContext";
 import useDraggable from "../hooks/useDraggable";
-import { DndID } from "../types";
+import { DndID, DraggableCallbacks, DraggableDropBehaviorType } from "../types";
 
 interface DraggableProps extends Omit<ViewProps, "id"> {
   id: DndID;
+  onEnter?: (draggedId: DndID, droppableId: DndID | null) => void;
+  onLeave?: (draggedId: DndID, droppableId: DndID | null) => void;
+  onDrop?: (draggedId: DndID, droppableId: DndID | null) => void;
+  dropBehavior?: DraggableDropBehaviorType;
   userAnimatedStyle?: (isDragging: boolean) => Record<string, unknown>;
   onDragStateChange?: (isDragging: boolean) => void;
   springConfig?: WithSpringConfig;
@@ -23,22 +27,35 @@ export const Draggable: React.FC<DraggableProps> = ({
   id,
   style,
   children,
+  onEnter,
+  onLeave,
+  onDrop,
+  dropBehavior = "snapToHome",
   userAnimatedStyle,
   onDragStateChange,
   springConfig,
 }) => {
   const elementRef = useAnimatedRef<Animated.View>();
+  const memoizedCallbacks = useMemo<DraggableCallbacks>(
+    () => ({
+      onEnter,
+      onLeave,
+      onDrop,
+    }),
+    [onEnter, onLeave, onDrop]
+  );
   const { offset: localOffset, onLayout } = useDraggable(
     id,
+    memoizedCallbacks,
     elementRef,
-    springConfig
+    springConfig,
+    dropBehavior
   );
-  const dndContext = useDndContext();
-
+  const { currentDraggableId } = useDndContext();
   const isCurrentlyDragging = useSharedValue(false);
 
   useAnimatedReaction(
-    () => dndContext.currentDraggedId.value === id,
+    () => currentDraggableId.value === id,
     (isDraggingNow, wasDraggingPreviously) => {
       if (isDraggingNow !== wasDraggingPreviously) {
         isCurrentlyDragging.value = isDraggingNow;
@@ -47,20 +64,18 @@ export const Draggable: React.FC<DraggableProps> = ({
         }
       }
     },
-    [id, dndContext.currentDraggedId, onDragStateChange, isCurrentlyDragging]
+    [id, currentDraggableId, onDragStateChange, isCurrentlyDragging]
   );
 
   const combinedAnimatedStyle = useAnimatedStyle(() => {
     const currentTransformations = [];
-    // Base translation from dragging
     if (localOffset && localOffset.value) {
       currentTransformations.push({ translateX: localOffset.value.x });
       currentTransformations.push({ translateY: localOffset.value.y });
     }
 
-    let finalStyles: Record<string, any> = {}; // Start with an empty object for non-transform styles
+    let finalStyles: Record<string, any> = {};
 
-    // Apply user-defined animated styles
     if (userAnimatedStyle) {
       const userProvidedStyles = userAnimatedStyle(isCurrentlyDragging.value);
       for (const key in userProvidedStyles) {
@@ -68,22 +83,19 @@ export const Draggable: React.FC<DraggableProps> = ({
           key === "transform" &&
           Array.isArray(userProvidedStyles.transform)
         ) {
-          // Add user's transform operations to our list
           currentTransformations.push(...userProvidedStyles.transform);
         } else {
-          // For other styles (opacity, zIndex, etc.), apply them directly
           finalStyles[key] = userProvidedStyles[key];
         }
       }
     }
 
-    // Assign the combined transformations if any exist
     if (currentTransformations.length > 0) {
       finalStyles.transform = currentTransformations;
     }
 
     return finalStyles;
-  }, [userAnimatedStyle]);
+  }, [userAnimatedStyle, localOffset]);
 
   return (
     <Animated.View

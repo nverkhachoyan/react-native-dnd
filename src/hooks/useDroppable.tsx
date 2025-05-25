@@ -1,147 +1,81 @@
-import { useLayoutEffect } from "react";
-import { LayoutChangeEvent, LayoutRectangle, View } from "react-native";
+import { useEffect } from "react";
+import { LayoutRectangle } from "react-native";
 import Animated, {
   AnimatedRef,
-  runOnJS,
   runOnUI,
+  useAnimatedReaction,
+  useSharedValue,
 } from "react-native-reanimated";
-import { DndContextType, useDndContext } from "../context/DndContext";
-import { DndID, DroppableCallbacks } from "../types";
-
-const MAX_MEASUREMENT_ATTEMPTS = 3;
-const RETRY_DELAY_MS = 100;
-
-// This worklet updates the droppable's layout and properties (callbacks, capacity, swappable)
-// in the D&D context. It's called from the JS thread via runOnUI after a successful measurement.
-const updateContextWithLayoutWorklet = (
-  dndContext: DndContextType,
-  itemId: DndID,
-  itemLayout: LayoutRectangle,
-  itemCallbacks: DroppableCallbacks,
-  itemCapacity?: number,
-  itemSwappable?: boolean
-) => {
-  "worklet";
-  const currentDroppables = dndContext.droppables.value;
-  dndContext.droppables.value = {
-    ...currentDroppables,
-    [itemId]: {
-      id: itemId,
-      layout: itemLayout,
-      callbacks: itemCallbacks,
-      capacity: itemCapacity,
-      swappable: itemSwappable,
-    },
-  };
-};
-
-// This function runs on the JS thread to perform layout measurement relative to the DndProvider.
-const performMeasureLayoutJS = (
-  elementRef: AnimatedRef<Animated.View>,
-  providerViewRef: AnimatedRef<View>,
-  itemId: DndID,
-  dndContextInstance: DndContextType,
-  callbacks: DroppableCallbacks,
-  capacity?: number,
-  swappable?: boolean,
-  attempt = 1
-) => {
-  if (!elementRef.current || !providerViewRef.current) {
-    if (attempt < MAX_MEASUREMENT_ATTEMPTS) {
-      setTimeout(
-        () =>
-          performMeasureLayoutJS(
-            elementRef,
-            providerViewRef,
-            itemId,
-            dndContextInstance,
-            callbacks,
-            capacity,
-            swappable,
-            attempt + 1
-          ),
-        RETRY_DELAY_MS
-      );
-    }
-    return;
-  }
-
-  elementRef.current.measureLayout(
-    providerViewRef.current,
-    (x, y, width, height) => {
-      const providerRelativeLayout = { x, y, width, height };
-      runOnUI(updateContextWithLayoutWorklet)(
-        dndContextInstance,
-        itemId,
-        providerRelativeLayout,
-        callbacks,
-        capacity,
-        swappable
-      );
-    },
-    () => {
-      if (attempt < MAX_MEASUREMENT_ATTEMPTS) {
-        setTimeout(
-          () =>
-            performMeasureLayoutJS(
-              elementRef,
-              providerViewRef,
-              itemId,
-              dndContextInstance,
-              callbacks,
-              capacity,
-              swappable,
-              attempt + 1
-            ),
-          RETRY_DELAY_MS
-        );
-      }
-    }
-  );
-};
+import { useDndContext } from "../context/DndContext";
+import { DndID, DroppableCallbacks, SnapBehaviorType } from "../types";
 
 function useDroppable(
   id: DndID,
   callbacks: DroppableCallbacks,
   elementRef: AnimatedRef<Animated.View>,
   capacity?: number,
-  swappable?: boolean
+  swappable?: boolean,
+  snapBehavior?: SnapBehaviorType
 ) {
-  const dndContext = useDndContext();
-  const { currentDroppableId, providerViewRef } = dndContext;
+  const { droppables, currentDroppableId, providerViewRef } = useDndContext();
+  const localLayout = useSharedValue<LayoutRectangle>({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+  });
 
-  // Initial layout measurement is triggered by the Droppable component's onLayout prop.
-  const onLayout = (_event: LayoutChangeEvent) => {
-    "worklet";
-    const measureLayout = () => {
-      performMeasureLayoutJS(
-        elementRef,
-        providerViewRef,
-        id,
-        dndContext,
-        callbacks,
-        capacity,
-        swappable
-      );
-    };
-    runOnJS(measureLayout)();
-  };
+  useAnimatedReaction(
+    () => localLayout.value,
+    (newLayout, _oldLayout) => {
+      "worklet";
+      if (newLayout && (newLayout.width > 0 || newLayout.height > 0)) {
+        const capturedCallbacks = callbacks;
+        const capturedCapacity = capacity;
+        const capturedSwappable = swappable;
+        const capturedSnapBehavior = snapBehavior;
 
-  useLayoutEffect(() => {
+        const currentDroppables = droppables.value;
+        droppables.value = {
+          ...currentDroppables,
+          [id]: {
+            id: id,
+            layout: newLayout,
+            callbacks: capturedCallbacks,
+            capacity: capturedCapacity,
+            swappable: capturedSwappable,
+            snapBehavior: capturedSnapBehavior,
+          },
+        };
+      }
+    },
+    [id, droppables, callbacks, capacity, swappable, snapBehavior]
+  );
+
+  useEffect(() => {
     return () => {
-      const cleanupWorklet = (
-        itemIdToClean: DndID,
-        context: DndContextType
-      ) => {
+      const cleanupWorklet = (itemIdToClean: DndID) => {
         "worklet";
-        if (context.droppables.value[itemIdToClean]) {
-          delete context.droppables.value[itemIdToClean];
-          context.droppables.value = { ...context.droppables.value };
+        if (droppables.value[itemIdToClean]) {
+          delete droppables.value[itemIdToClean];
+          droppables.value = { ...droppables.value };
         }
       };
-      runOnUI(cleanupWorklet)(id, dndContext);
+      runOnUI(cleanupWorklet)(id);
     };
-  }, [id, dndContext]);
+  }, [id, droppables]);
+
+  const onLayout = () => {
+    if (!elementRef.current || !providerViewRef.current) {
+      return;
+    }
+    elementRef.current.measureLayout(
+      providerViewRef.current,
+      (x, y, width, height) => {
+        localLayout.value = { x, y, width, height };
+      }
+    );
+  };
 
   return {
     currentDroppableId,
