@@ -22,7 +22,7 @@ Lightweight Drag and Drop for React Native, powered by Reanimated & Gesture Hand
 
 ## Documentation
 
-You can find extensive documentation for the module [here](https://www.nverk.me/react-native-dnd).
+You can find extensive documentation for the module [here](https://react-native-dnd.nverk.me).
 
 ## Installation
 

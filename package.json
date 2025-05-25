@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/nverkhachoyan/react-native-dnd/issues"
   },
-  "homepage": "https://www.nverk.me/react-native-dnd",
+  "homepage": "https://react-native-dnd.nverk.me",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
