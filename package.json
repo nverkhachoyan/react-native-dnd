@@ -1,6 +1,6 @@
 {
   "name": "@nverk/react-native-dnd",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "A versatile drag and drop library for React Native with gesture handling and smooth animations",
   "author": "Nver Khachoyan",
   "license": "MIT",
